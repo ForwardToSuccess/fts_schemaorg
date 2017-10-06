@@ -1,0 +1,4 @@
+name = FTS Schema.org
+description = Подключение Schema.org на сайт
+package = FTS
+core = 7.x
