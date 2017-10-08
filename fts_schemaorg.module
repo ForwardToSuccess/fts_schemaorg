@@ -199,7 +199,7 @@ $form['#prefix'] = theme('token_tree', array('token_types' => 'all', 'dialog' =>
 		}
 
 		if ($type == 'Article') {
-
+			// Новости
 
 			$form['schema'] = array(
 				'#type' => 'fieldset',
@@ -243,48 +243,105 @@ $form['#prefix'] = theme('token_tree', array('token_types' => 'all', 'dialog' =>
 				'#required'      => true,
 			);
 
-
-				$form['schema']['logo_url'] = array(
-					'#title'         => t('Logo URL'),
-					'#type'          => 'textfield',
-				'#default_value' => $fts_field ? $fts_field['logo_url'] : '',
-					'#required'      => true,
-					'#prefix' => "<h2><b>Организация</b></h2>",
-				);
-				$form['schema']['logo_width'] = array(
-					'#title'         => t('Logo width'),
-					'#type'          => 'textfield',
-					'#default_value' => $fts_field ? $fts_field['logo_width'] : '',
-					'#required'      => true,
-				);
-				$form['schema']['logo_height'] = array(
-					'#title'         => t('Logo height'),
-					'#type'          => 'textfield',
-					'#default_value' => $fts_field ? $fts_field['logo_height'] : '',
-					'#required'      => true,
-				);
-				$form['schema']['phone'] = array(
-					'#title'         => t('Phone'),
-					'#type'          => 'textfield',
-					'#description'   => t('Что бы указать несколько номеров, поставьте между ними запятую'),
-					'#default_value' => $fts_field ? $fts_field['phone'] : '',
-					'#required'      => true,
-				);
-				$form['schema']['address'] = array(
-					'#title'         => t('Address'),
-					'#type'          => 'textfield',
-					'#default_value' => $fts_field ? $fts_field['address'] : '',
-					'#required'      => true,
-				);
-				$form['schema']['name_company'] = array(
-					'#title'         => t('Name company'),
-					'#type'          => 'textfield',
-					'#default_value' => $fts_field ? $fts_field['name_company'] : '',
-					'#required'      => true,
-				);
-
+			$form['schema']['logo_url'] = array(
+				'#title'         => t('Logo URL'),
+				'#type'          => 'textfield',
+			'#default_value' => $fts_field ? $fts_field['logo_url'] : '',
+				'#required'      => true,
+				'#prefix' => "<h2><b>Организация</b></h2>",
+			);
+			$form['schema']['logo_width'] = array(
+				'#title'         => t('Logo width'),
+				'#type'          => 'textfield',
+				'#default_value' => $fts_field ? $fts_field['logo_width'] : '',
+				'#required'      => true,
+			);
+			$form['schema']['logo_height'] = array(
+				'#title'         => t('Logo height'),
+				'#type'          => 'textfield',
+				'#default_value' => $fts_field ? $fts_field['logo_height'] : '',
+				'#required'      => true,
+			);
+			$form['schema']['phone'] = array(
+				'#title'         => t('Phone'),
+				'#type'          => 'textfield',
+				'#description'   => t('Что бы указать несколько номеров, поставьте между ними запятую'),
+				'#default_value' => $fts_field ? $fts_field['phone'] : '',
+				'#required'      => true,
+			);
+			$form['schema']['address'] = array(
+				'#title'         => t('Address'),
+				'#type'          => 'textfield',
+				'#default_value' => $fts_field ? $fts_field['address'] : '',
+				'#required'      => true,
+			);
+			$form['schema']['name_company'] = array(
+				'#title'         => t('Name company'),
+				'#type'          => 'textfield',
+				'#default_value' => $fts_field ? $fts_field['name_company'] : '',
+				'#required'      => true,
+			);
 
 
+		} else if ($type == 'Product') {
+			// Товар
+
+			$form['schema'] = array(
+				'#type' => 'fieldset',
+				'#tree' => TRUE,
+			);
+			$form['schema']['title'] = array(
+				'#title'         => t('Title'),
+				'#type'          => 'textfield',
+				'#default_value' => $fts_field ? $fts_field['title'] : '',
+				'#required'      => true,
+				'#prefix' => "<h2><b>Schema.org</b></h2>",
+			);
+			$form['schema']['description'] = array(
+				'#title'         => t('Description'),
+				'#type'          => 'textfield',
+				'#default_value' => $fts_field ? $fts_field['description'] : '',
+				'#required'      => true,
+			);
+			$form['schema']['image_url'] = array(
+				'#title'         => t('Image URL'),
+				'#type'          => 'textfield',
+				'#default_value' => $fts_field ? $fts_field['image_url'] : '',
+				'#required'      => true,
+			);
+			$form['schema']['image_width'] = array(
+				'#title'         => t('Image width'),
+				'#type'          => 'textfield',
+				'#default_value' => $fts_field ? $fts_field['image_width'] : '',
+				'#required'      => true,
+			);
+			$form['schema']['image_height'] = array(
+				'#title'         => t('Image height'),
+				'#type'          => 'textfield',
+				'#default_value' => $fts_field ? $fts_field['image_height'] : '',
+				'#required'      => true,
+			);
+
+
+			$form['schema']['price_currency'] = array(
+				'#title'         => t('Price currency'),
+				'#type'          => 'textfield',
+			'#default_value' => $fts_field ? $fts_field['price_currency'] : '',
+				'#required'      => true,
+				'#prefix' => "<h2><b>Предложение</b></h2>",
+			);
+			$form['schema']['price'] = array(
+				'#title'         => t('Price'),
+				'#type'          => 'textfield',
+				'#default_value' => $fts_field ? $fts_field['price'] : '',
+				'#required'      => true,
+			);
+			$form['schema']['seller'] = array(
+				'#title'         => t('Seller'),
+				'#type'          => 'textfield',
+				'#default_value' => $fts_field ? $fts_field['seller'] : '',
+				'#required'      => true,
+			);
 		}
 
 
@@ -300,7 +357,10 @@ $form['#prefix'] = theme('token_tree', array('token_types' => 'all', 'dialog' =>
 		$form['type'] = array(
 			'#title'         => t('Тип Схемы'),
 			'#type'          => 'select',
-			'#options'          => array('Article' => 'Article'),
+			'#options'          => array(
+				'Article' => 'Article',
+				'Product' => 'Product'
+			),
 			'#default_value' => 'Article',
 			'#required'      => true,
 		);
@@ -316,14 +376,9 @@ $form['#prefix'] = theme('token_tree', array('token_types' => 'all', 'dialog' =>
 			'#type'  => 'submit',
 			'#value' => $fts ? t('Save') : t('Create'),
 			'#submit' => array('fts_schemaorg_add_components_callback'),
-          // 'callback' => 'fts_schemaorg_add_components_form_submit',
-			// '#value' => $fts ? t('Save') : t('Add'),
 		);
 
 	}
-
-
-
 
 	return $form;
 }
@@ -356,11 +411,11 @@ function fts_schemaorg_add_components_callback($form, &$form_state) {
 		}
 
 		$component = array(
-			'type'       => $type,
-			'type_entity'=> $type_entity,
-			'name'       => $form_state['values']['name'],
-			'type_and_linck'       => $form_state['values']['type_and_linck'],
-			'enabled'    => 1,
+			'type'          => $type,
+			'type_entity'   => $type_entity,
+			'name'          => $form_state['values']['name'],
+			'type_and_linck'=> $form_state['values']['type_and_linck'],
+			'enabled'       => 1,
 		);
 
 		// save edit data
@@ -444,10 +499,6 @@ function fts_schemaorg_block_view($delta = '') {
 
 		$microdata = fts_load($sid);
 		$microdata_field = fts2_load($sid);
-		// dsm($microdata);
-		// dsm($microdata_field);
-
-
 
   		if ($microdata['type'] == 'Article') {
   			// Статьи/Новости
@@ -476,6 +527,25 @@ function fts_schemaorg_block_view($delta = '') {
 			    <span itemprop="author">'.token_replace($microdata_field['author'], array("node" => $node)).'</span>
 			</div>';
 
+  		} else if ($microdata['type'] == 'Product') {
+  			$node = node_load(arg(1));
+
+			$content = '<div itemscope itemtype="http://schema.org/Product">
+				<span itemprop="name">'.token_replace($microdata_field['title'], array("node" => $node)).'</span>
+			    <span itemprop="image" itemscope itemtype="https://schema.org/ImageObject">
+					<img itemprop="image url" src="'.token_replace($microdata_field['image_url'], array("node" => $node)).'"/>
+					<meta itemprop="width" content="'.token_replace($microdata_field['image_width'], array("node" => $node)).'">
+					<meta itemprop="height" content="'.token_replace($microdata_field['image_height'], array("node" => $node)).'">
+				</span>
+
+				<div itemprop="offers" itemscope itemtype="http://schema.org/Offer">
+					<span itemprop="priceCurrency" content="'.token_replace($microdata_field['price_currency'], array("node" => $node)).'"></span>
+					<span itemprop="price" content="'.token_replace($microdata_field['price'], array("node" => $node)).'"></span>
+					<link itemprop="availability" href="http://schema.org/InStock" />
+				</div>
+
+				<span itemprop="description">'.token_replace($microdata_field['description'], array("node" => $node)).'</span>
+			</div>';
   		}
   	// 	else if($node->type == 'uslugi') {
   	// 		// Страница контактов (Контакты)
