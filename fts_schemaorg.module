@@ -1,5 +1,410 @@
 <?php
 
+// ЧТО РЕАЛИЗОВАТЬ:
+// Дописать Схемы по ссылке
+// Токены доступны только на нодах !
+// Дописать схему для терминов
+// Написать схему для товаров
+// Несколько телефоно если указаны через запятую
+
+
+function fts_schemaorg_access_page()
+{
+	global $user;
+
+	if (in_array('administrator', $user->roles) || in_array('admin', $user->roles)) {
+		return TRUE;
+	}
+}
+
+function fts_schemaorg_menu() {
+
+	$items = array();
+
+	$items['admin/structure/fts_schemaorg'] = array(
+		'title'            => 'Schema.org',
+		'description'      => 'Lists schema.org',
+		'page callback'    => 'fts_schemaorg_list',
+		'access callback'    => 'fts_schemaorg_access_page',
+		'access arguments' => array('administer site configuration'),
+	);
+		// Добавление компонента схемы
+	$items['admin/structure/fts_schemaorg/add_component'] = array(
+		'title'            => 'Add Component schema.org',
+		'page callback'    => 'drupal_get_form',
+		'page arguments'   => array('fts_schemaorg_add_components_form'),
+		'access callback'    => 'fts_schemaorg_access_page',
+		'access arguments' => array('administer site configuration'),
+		'type'             => MENU_LOCAL_TASK,
+		'weight'           => 2,
+	);
+
+	// Редактирвоание компонета
+	$items['admin/structure/fts_schemaorg/%fts/edit'] = array(
+		'title'            => 'Edit Component Schema.org',
+		'page callback'    => 'drupal_get_form',
+		'page arguments'   => array('fts_schemaorg_add_components_form', 4),
+		'access callback'    => 'fts_schemaorg_access_page',
+		'access arguments' => array('administer site configuration'),
+		'type'             => MENU_CALLBACK,
+	);
+
+	// удаление компонента
+	$items['admin/structure/fts_schemaorg/%fts/delete'] = array(
+		'title'            => 'Delete Component Schema.org',
+		'page callback'    => 'fts_schemaorg_delete',
+		'page arguments'   => array(4),
+		'access callback'    => 'fts_schemaorg_access_page',
+		'access arguments' => array('administer site configuration'),
+		'type'             => MENU_CALLBACK,
+	);
+
+	return $items;
+}
+
+// удаление компонента схемы
+function fts_schemaorg_delete($fts) {
+
+	db_delete('fts_schemaorg')
+		->condition('sid',arg(3))
+		->execute();
+	db_delete('fts_schemaorg_settings')
+		->condition('sid', arg(3))
+		->execute();
+	drupal_set_message(t('Компонент удален'));
+	drupal_goto('admin/structure/fts_schemaorg');
+}
+
+
+function fts_schemaorg_list() {
+	$header = array(
+		array('data' => t('Name')),
+		array('data' => t('Type Schema.org')),
+		array('data' => t('Type entity')),
+		array('data' => t('Type and linck')),
+		array('data' => t('Eenabled')),
+		array('data' => ''),
+		// array('data' => t('Actions'))
+	);
+
+	$fts = db_select('fts_schemaorg', 'n')
+		->fields('n', array('sid', 'name', 'type', 'type_entity', 'type_and_linck', 'enabled'))
+		// ->fields('n', array('id', 'name', 'url'))
+		->execute()->fetchAll();
+	$row = array();
+	if ($fts) {
+		foreach ($fts as $fts_value) {
+			$actions = array(
+				l(t('edit'), 'admin/structure/fts_schemaorg/' . $fts_value->sid . '/edit'),
+				l(t('delete'), 'admin/structure/fts_schemaorg/' . $fts_value->sid . '/delete'),
+			);
+
+			$row [] = array(
+				array('data' => $fts_value->name),
+				array('data' => $fts_value->type),
+				array('data' => $fts_value->type_entity),
+				array('data' => $fts_value->type_and_linck),
+				array('data' => $fts_value->enabled),
+				array('data' => implode(' | ', $actions)),
+			);
+		}
+	}
+
+	return theme('table', array(
+		'header' => $header,
+		'rows'   => $row,
+	));
+}
+
+
+// загрузка настроек схемы
+function fts_load($id) {
+	$fts = db_select('fts_schemaorg', 's')
+		->fields('s', array('sid', 'name', 'type', 'type_entity', 'type_and_linck', 'enabled'))
+		// ->fields('n', array('id', 'name', 'price', 'created_at', 'updated_at'))
+		->condition('s.sid', $id)
+		->execute()->fetchAssoc();
+
+	return $fts;
+}
+// загрузка полей схемы
+function fts2_load($id) {
+	$fts = db_select('fts_schemaorg_settings', 'f')
+		->fields('f', array('machine_name', 'value'))
+		// ->fields('n', array('id', 'name', 'price', 'created_at', 'updated_at'))
+		->condition('f.sid', $id)
+		->execute()->fetchAllKeyed();
+
+	return $fts;
+}
+
+
+
+function fts_schemaorg_add_components_form($form, &$form_state, $fts = null) {
+	if (fts_load(arg(3))) {
+		 $fts = fts_load(arg(3));
+	}
+	$add_components = FALSE;
+	if (isset($_GET['type']) && isset($_GET['type_entity'])) {
+		$add_components = TRUE;
+	}
+
+	if ($add_components || isset($fts)) {
+
+$form['#prefix'] = theme('token_tree', array('token_types' => 'all', 'dialog' => TRUE));
+
+		if (isset($fts)) {
+			$type = $fts['type'];
+			$type_entity = $fts['type_entity'];
+
+			$fts_field = fts2_load(arg(3));
+			$form['sid'] = array(
+				'#type'          => 'value',
+				'#default_value' => arg(3),
+			);
+		} else {
+			$fts_field = NULL;
+			$type = $_GET['type'];
+			$type_entity = $_GET['type_entity'];
+		}
+
+
+		$form['name'] = array(
+			'#title'         => t('Название компонента'),
+			'#type'          => 'textfield',
+			'#default_value' => $fts ? $fts['name'] : '',
+			'#required'      => true,
+		);
+
+
+		if ($type_entity == 'node') {
+			$node_type_options = db_select('node_type', 'n')
+			  ->fields('n', array('type', 'name'))
+			  ->execute()
+			  ->fetchAllKeyed();
+			$form['type_and_linck'] = array(
+				'#title'         => t('Node type'),
+				'#type'          => 'select',
+				'#options'          => $node_type_options,
+				'#default_value' => $fts ? $fts['type_and_linck'] : '',
+				'#required'      => true,
+			);
+		} else if($type_entity == 'link') {
+			$form['type_and_linck'] = array(
+				'#title'         => t('Link'),
+				'#type'          => 'textfield',
+				'#default_value' => $fts ? $fts['type_and_linck'] : '',
+				'#required'      => true,
+			);
+		}
+
+		if ($type == 'Article') {
+
+
+			$form['schema'] = array(
+				'#type' => 'fieldset',
+				'#tree' => TRUE,
+			);
+			$form['schema']['title'] = array(
+				'#title'         => t('Title'),
+				'#type'          => 'textfield',
+				'#default_value' => $fts_field ? $fts_field['title'] : '',
+				'#required'      => true,
+				'#prefix' => "<h2><b>Schema.org</b></h2>",
+			);
+			$form['schema']['description'] = array(
+				'#title'         => t('Description'),
+				'#type'          => 'textfield',
+				'#default_value' => $fts_field ? $fts_field['description'] : '',
+				'#required'      => true,
+			);
+			$form['schema']['image_url'] = array(
+				'#title'         => t('Image URL'),
+				'#type'          => 'textfield',
+				'#default_value' => $fts_field ? $fts_field['image_url'] : '',
+				'#required'      => true,
+			);
+			$form['schema']['image_width'] = array(
+				'#title'         => t('Image width'),
+				'#type'          => 'textfield',
+				'#default_value' => $fts_field ? $fts_field['image_width'] : '',
+				'#required'      => true,
+			);
+			$form['schema']['image_height'] = array(
+				'#title'         => t('Image height'),
+				'#type'          => 'textfield',
+				'#default_value' => $fts_field ? $fts_field['image_height'] : '',
+				'#required'      => true,
+			);
+			$form['schema']['author'] = array(
+				'#title'         => t('Author'),
+				'#type'          => 'textfield',
+				'#default_value' => $fts_field ? $fts_field['author'] : '',
+				'#required'      => true,
+			);
+
+
+				$form['schema']['logo_url'] = array(
+					'#title'         => t('Logo URL'),
+					'#type'          => 'textfield',
+				'#default_value' => $fts_field ? $fts_field['logo_url'] : '',
+					'#required'      => true,
+					'#prefix' => "<h2><b>Организация</b></h2>",
+				);
+				$form['schema']['logo_width'] = array(
+					'#title'         => t('Logo width'),
+					'#type'          => 'textfield',
+					'#default_value' => $fts_field ? $fts_field['logo_width'] : '',
+					'#required'      => true,
+				);
+				$form['schema']['logo_height'] = array(
+					'#title'         => t('Logo height'),
+					'#type'          => 'textfield',
+					'#default_value' => $fts_field ? $fts_field['logo_height'] : '',
+					'#required'      => true,
+				);
+				$form['schema']['phone'] = array(
+					'#title'         => t('Phone'),
+					'#type'          => 'textfield',
+					'#description'   => t('Что бы указать несколько номеров, поставьте между ними запятую'),
+					'#default_value' => $fts_field ? $fts_field['phone'] : '',
+					'#required'      => true,
+				);
+				$form['schema']['address'] = array(
+					'#title'         => t('Address'),
+					'#type'          => 'textfield',
+					'#default_value' => $fts_field ? $fts_field['address'] : '',
+					'#required'      => true,
+				);
+				$form['schema']['name_company'] = array(
+					'#title'         => t('Name company'),
+					'#type'          => 'textfield',
+					'#default_value' => $fts_field ? $fts_field['name_company'] : '',
+					'#required'      => true,
+				);
+
+
+
+		}
+
+
+		$form['submit'] = array(
+			'#type'  => 'submit',
+			'#value' => $fts ? t('Save') : t('Create'),
+			'#submit' => array('fts_schemaorg_add_components_callback'),
+		);
+
+
+	} else {
+
+		$form['type'] = array(
+			'#title'         => t('Тип Схемы'),
+			'#type'          => 'select',
+			'#options'          => array('Article' => 'Article'),
+			'#default_value' => 'Article',
+			'#required'      => true,
+		);
+		$form['type_entity'] = array(
+			'#title'         => t('Сущность схемы'),
+			'#type'          => 'select',
+			'#options'          => array('node' => 'node', 'taxonomy' => 'taxonomy', 'link' => 'link'),
+			'#default_value' => 'node',
+			'#required'      => true,
+		);
+
+		$form['submit'] = array(
+			'#type'  => 'submit',
+			'#value' => $fts ? t('Save') : t('Create'),
+			'#submit' => array('fts_schemaorg_add_components_callback'),
+          // 'callback' => 'fts_schemaorg_add_components_form_submit',
+			// '#value' => $fts ? t('Save') : t('Add'),
+		);
+
+	}
+
+
+
+
+	return $form;
+}
+
+
+
+function fts_schemaorg_add_components_callback($form, &$form_state) {
+	if (fts_load(arg(3))) {
+		 $fts = fts_load(arg(3));
+	}
+	$add_components = FALSE;
+	if (isset($_GET['type']) && isset($_GET['type_entity'])) {
+		$add_components = TRUE;
+	}
+
+	if ($add_components || isset($fts)) {
+
+		if (isset($fts)) {
+			$type = $fts['type'];
+			$type_entity = $fts['type_entity'];
+
+			$fts_field = fts2_load(arg(3));
+			$form['sid'] = array(
+				'#type'          => 'value',
+				'#default_value' => arg(3),
+			);
+		} else {
+			$type = $_GET['type'];
+			$type_entity = $_GET['type_entity'];
+		}
+
+		$component = array(
+			'type'       => $type,
+			'type_entity'=> $type_entity,
+			'name'       => $form_state['values']['name'],
+			'type_and_linck'       => $form_state['values']['type_and_linck'],
+			'enabled'    => 1,
+		);
+
+		// save edit data
+		if (isset($form_state['values']['sid'])) {
+			$component['sid'] = $form_state['values']['sid'];
+			drupal_write_record('fts_schemaorg', $component, 'sid');
+			foreach ($fts_field as $key => $value) {
+				db_update('fts_schemaorg_settings')
+				  ->fields(array('value' => $form_state['values']['schema'][$key]))
+				  ->condition('sid', $component['sid'])
+				  ->condition('machine_name', $key)
+				  ->execute();
+			}
+			drupal_set_message(t('Компонент сохранен'));
+		} // add new data
+		else {
+			// создание схемы
+			drupal_write_record('fts_schemaorg', $component);
+			// создание полей схемы
+			$sid = db_select('fts_schemaorg');
+			$sid->addExpression('MAX(sid)');
+			$sid = $sid->execute()->fetchField();
+			foreach ($form_state['values']['schema'] as $key => $value) {
+				$component_field = array(
+					'sid' => $sid,
+					'machine_name' => $key,
+					'value' => $value,
+				);
+				drupal_write_record('fts_schemaorg_settings', $component_field);
+			}
+
+
+			drupal_set_message(t('Компонент добавлен'));
+
+		}
+	} else {
+		drupal_goto('admin/structure/fts_schemaorg/add_component', array('query'=>array(
+			'type'=>$form_state['values']['type'],
+			'type_entity'=>$form_state['values']['type_entity'])));
+	}
+
+}
+
+
 
 
 function fts_schemaorg_block_info() {
@@ -15,61 +420,80 @@ function fts_schemaorg_block_info() {
 
 
 function fts_schemaorg_block_view($delta = '') {
-  // if ($delta == 'fts_schemaorg') {
-  // 	$microdata = NULL;
-  // 	if(arg(0) == 'node') {
-  // 		$node = node_load(arg(1));
-  // 		if ($node->type == 'news' || $node->type == 'stii_m') {
-  // 			// Статьи/Новости
-		// 	$image = 'https://advokat-perewerzew.com.ua/sites/all/themes/design/img/advokat.png';
-  // 			if (isset($node->field_image[LANGUAGE_NONE][0]['fid'])) {
-  // 				$image = image_style_url('200x200', $node->field_image[LANGUAGE_NONE][0]['uri']);
-  // 			}
+  if ($delta == 'fts_schemaorg') {
+  	$content = NULL;
+  	// $microdata = 1;
+	$sid = db_select('fts_schemaorg', 's')
+	->fields('s', array('sid'))
+	->condition('s.type_and_linck', current_path())
+	->execute()
+	->fetchField();
 
-	 //  		$microdata = '<div itemscope itemtype="http://schema.org/Article" class="display_none">
-		// 	    <link itemprop="mainEntityOfPage" itemscope href="'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'].'" />
-		// 	    <span itemprop="headline">'.$node->title.'</span>
-		// 	    <div itemprop="description">'.token_replace('[node:metatag:description]', array('node' => $node)).'</div>
-		// 	    <span itemprop="datePublished">'.token_replace('[node:metatag:article:published_time]', array('node' => $node)).'</span>
-		// 	    <span itemprop="dateModified">'.token_replace('[node:metatag:article:modified_time]', array('node' => $node)).'</span>
-		// 	    <span itemprop="image" itemscope itemtype="https://schema.org/ImageObject">
-		// 			<img itemprop="image url" src="'.$image.'"/>
-		// 			<meta itemprop="width" content="150">
-		// 			<meta itemprop="height" content="150">
-		// 		</span>
-		// 	    <div itemprop="publisher" itemscope itemtype="https://schema.org/Organization">
-		// 	        <div itemprop="logo" itemscope itemtype="https://schema.org/ImageObject">
-		// 	            <img itemprop="image url" src="https://advokat-perewerzew.com.ua/sites/all/themes/design/img/advokat.png"/>
-		// 	            <meta itemprop="width" content="200">
-		// 	            <meta itemprop="height" content="200">
-		// 	        </div>
-		// 	        <meta itemprop="telephone" content="(093) 40 39 250">
-		// 	        <meta itemprop="telephone" content="(096) 69 94 888">
-		// 	        <meta itemprop="telephone" content="(050) 13 54 578">
-		// 	        <meta itemprop="telephone" content="(046) 29 30 261">
-		// 	        <meta itemprop="address" content="Украина, Чернигов, ул. Коцюбинского 49а, офис 101">
-		// 	        <meta itemprop="name" content="Адвокат Переверзев Александр Александрович">
-		// 	    </div>
-		// 	    <span itemprop="author">Адвокат Переверзев Александр Александрович</span>
-		// 	</div>';
+	if (!$sid) {
+		if (arg(0) == 'node') {
+			$sid = db_select('fts_schemaorg', 's')
+			->fields('s', array('sid'))
+			->condition('s.type_and_linck', node_load(arg(1))->type)
+			->execute()
+			->fetchField();
+		}
+	}
 
-  // 		} else if($node->type == 'uslugi') {
-  // 			// Страница контактов (Контакты)
-	 //  		$microdata = '<div itemscope itemtype="http://schema.org/Service" class="display_none">
-		// 	    <link itemprop="mainEntityOfPage" itemscope href="'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'].'" />
-		// 	    <span itemprop="name">'.$node->title.'</span>
-		// 	    <div itemprop="description">'.token_replace('[node:metatag:description]', array('node' => $node)).'</div>
-		// 	    <div itemprop="serviceType">Услуги адвоката</div>
-		// 	</div>';
-  // 		}
-  // 	}
+
+	if ($sid) {
+
+		$microdata = fts_load($sid);
+		$microdata_field = fts2_load($sid);
+		// dsm($microdata);
+		// dsm($microdata_field);
+
+
+
+  		if ($microdata['type'] == 'Article') {
+  			// Статьи/Новости
+  			$node = node_load(arg(1));
+	  		$content = '<div itemscope itemtype="http://schema.org/Article" class="display_none">
+			    <link itemprop="mainEntityOfPage" itemscope href="'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'].'" />
+			    <span itemprop="headline">'.token_replace($microdata_field["title"], array("node" => $node)).'</span>
+			    <div itemprop="description">'.token_replace($microdata_field['description'], array("node" => $node)).'</div>
+			    <span itemprop="datePublished">'.token_replace('[node:metatag:article:published_time]', array("node" => $node)).'</span>
+			    <span itemprop="dateModified">'.token_replace('[node:metatag:article:modified_time]', array("node" => $node)).'</span>
+			    <span itemprop="image" itemscope itemtype="https://schema.org/ImageObject">
+					<img itemprop="image url" src="'.token_replace($microdata_field['image_url'], array("node" => $node)).'"/>
+					<meta itemprop="width" content="'.token_replace($microdata_field['image_width'], array("node" => $node)).'">
+					<meta itemprop="height" content="'.token_replace($microdata_field['image_height'], array("node" => $node)).'">
+				</span>
+			    <div itemprop="publisher" itemscope itemtype="https://schema.org/Organization">
+			        <div itemprop="logo" itemscope itemtype="https://schema.org/ImageObject">
+			            <img itemprop="image url" src="'.token_replace($microdata_field['logo_url'], array("node" => $node)).'"/>
+			            <meta itemprop="width" content="'.token_replace($microdata_field['logo_width'], array("node" => $node)).'">
+			            <meta itemprop="height" content="'.token_replace($microdata_field['logo_height'], array("node" => $node)).'">
+			        </div>
+			        <meta itemprop="telephone" content="'.token_replace($microdata_field['phone'], array("node" => $node)).'">
+			        <meta itemprop="address" content="'.token_replace($microdata_field['address'], array("node" => $node)).'">
+			        <meta itemprop="name" content="'.token_replace($microdata_field['name_company'], array("node" => $node)).'">
+			    </div>
+			    <span itemprop="author">'.token_replace($microdata_field['author'], array("node" => $node)).'</span>
+			</div>';
+
+  		}
+  	// 	else if($node->type == 'uslugi') {
+  	// 		// Страница контактов (Контакты)
+	  // 		$content = '<div itemscope itemtype="http://schema.org/Service" class="display_none">
+			//     <link itemprop="mainEntityOfPage" itemscope href="'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'].'" />
+			//     <span itemprop="name">'.$node->title.'</span>
+			//     <div itemprop="description">'.token_replace('[node:metatag:description]', array('node' => $node)).'</div>
+			//     <div itemprop="serviceType">Услуги адвоката</div>
+			// </div>';
+  	// 	}
+  	}
   		
-  //   $block = array(
-  //       'subject' => NULL,
-  //       'content' => $microdata,
-  //     );
-  // }
-  // return $block;  
+    $block = array(
+        'subject' => NULL,
+        'content' => $content,
+      );
+  }
+  return $block;  
 }
 
 

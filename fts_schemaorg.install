@@ -1,0 +1,38 @@
+<?php
+function fts_schemaorg_uninstall()
+{
+	cache_clear_all('fts_schemaorg', 'cache', TRUE);
+	cache_clear_all('fts_schemaorg_settings', 'cache', TRUE);
+	drupal_uninstall_schema('fts_schemaorg');
+	drupal_uninstall_schema('fts_schemaorg_settings');
+	menu_rebuild();
+}
+
+function fts_schemaorg_schema()
+{
+	$schema['fts_schemaorg'] = array(
+		'fields'      => array(
+			'sid'        => array('type' => 'serial', 'size'=>'normal', 'not null' => TRUE),
+			'weight'       => array('type' => 'int', 'not null' => TRUE, 'default' => 0),
+			'name'       => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
+			'type'      => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
+			'type_entity'      => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
+			'type_and_linck'      => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
+			'enabled'      => array('type' => 'int', 'not null' => TRUE, 'default' => 1),
+			// 'created_at' => array('type' => 'int', 'not null' => TRUE),
+			// 'updated_at' => array('type' => 'int', 'not null' => TRUE),
+		),
+		'primary key' => array('sid')
+	);
+	$schema['fts_schemaorg_settings'] = array(
+		'fields'      => array(
+			'id'        => array('type' => 'serial', 'size'=>'normal', 'not null' => TRUE),
+			'sid' => array('type' => 'int', 'not null' => TRUE, 'default' => 0),
+			'machine_name'     => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
+			'value'     => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
+		),
+		'primary key' => array('id')
+	);
+
+	return $schema;
+}
