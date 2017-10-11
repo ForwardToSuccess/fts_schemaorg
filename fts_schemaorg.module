@@ -476,6 +476,9 @@ function fts_schemaorg_block_info() {
 
 function fts_schemaorg_block_view($delta = '') {
   if ($delta == 'fts_schemaorg') {
+
+  drupal_add_css(drupal_get_path('module', 'fts_schemaorg') . '/fts_schemaorg.css');
+  
   	$content = NULL;
   	// $microdata = 1;
 	$sid = db_select('fts_schemaorg', 's')
@@ -503,6 +506,15 @@ function fts_schemaorg_block_view($delta = '') {
   		if ($microdata['type'] == 'Article') {
   			// Статьи/Новости
   			$node = node_load(arg(1));
+
+			$microdata_field_phone = '';
+			if (isset($microdata_field['phone'])) {
+				$microdata_field['phone'] =	explode(',', $microdata_field['phone']);
+				foreach ($microdata_field['phone'] as $key => $value) {
+				$microdata_field_phone .= '<meta itemprop="telephone" content="'.token_replace($value, array("node" => $node)).'">';
+				}
+			}
+
 	  		$content = '<div itemscope itemtype="http://schema.org/Article" class="display_none">
 			    <link itemprop="mainEntityOfPage" itemscope href="'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'].'" />
 			    <span itemprop="headline">'.token_replace($microdata_field["title"], array("node" => $node)).'</span>
@@ -520,7 +532,7 @@ function fts_schemaorg_block_view($delta = '') {
 			            <meta itemprop="width" content="'.token_replace($microdata_field['logo_width'], array("node" => $node)).'">
 			            <meta itemprop="height" content="'.token_replace($microdata_field['logo_height'], array("node" => $node)).'">
 			        </div>
-			        <meta itemprop="telephone" content="'.token_replace($microdata_field['phone'], array("node" => $node)).'">
+			        '.$microdata_field_phone.'
 			        <meta itemprop="address" content="'.token_replace($microdata_field['address'], array("node" => $node)).'">
 			        <meta itemprop="name" content="'.token_replace($microdata_field['name_company'], array("node" => $node)).'">
 			    </div>
